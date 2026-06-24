@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTier, getScorePercent, MAX_SCORE } from "@/lib/quiz";
 
 const RESEND_API = "https://api.resend.com/emails";
-const FROM = "AI Operator Platform <hello@aioperator.ceo>";
+const FROM = "AI Operator Platform <support@aioperator.ceo>";
 const BASE_URL = "https://aioperator.ceo";
 const BRAND = "#6366f1";
 
