@@ -1,103 +1,169 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTier, getScorePercent, MAX_SCORE } from "@/lib/quiz";
+import { getTier, MAX_SCORE } from "@/lib/quiz";
+import { buildScoreReport, buildDripDay2, buildDripDay4 } from "@/lib/email-templates";
+
+// ─── Config ──────────────────────────────────────────────────────────────────
 
 const RESEND_API = "https://api.resend.com/emails";
-const FROM = "AI Operator Platform <support@aioperator.ceo>";
-const BASE_URL = "https://aioperator.ceo";
-const BRAND = "#6366f1";
+const NOTION_API = "https://api.notion.com/v1/pages";
+const NOTION_LEADS_DB = "48a9ad6e-416d-4e58-bc69-30ce6a0b70dc"; // Assessment Leads DB
+const MAX_SCORE_LOCAL = MAX_SCORE;
 
-function buildScoreReport(email: string, score: number, tierName: string): string {
-  const tier = getTier(score);
-  const percent = getScorePercent(score);
+// FROM address: use verified domain in prod, fallback to Resend sandbox in dev
+const FROM =
+  process.env.EMAIL_DOMAIN_VERIFIED === "true"
+    ? "AI Operator Platform <support@aioperator.ceo>"
+    : "AI Operator Platform <onboarding@resend.dev>";
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#09090b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#fafafa;">
-  <table width="100%" cellpadding="0" cellspacing="0">
-    <tr><td align="center" style="padding:40px 16px;">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-        <tr><td style="padding-bottom:32px;">
-          <span style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND};">● AI Operator Platform</span>
-        </td></tr>
+// ─── Validation ───────────────────────────────────────────────────────────────
 
-        <tr><td style="padding-bottom:24px;">
-          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#fafafa;">Your AI Operator Score: ${score}/${MAX_SCORE}</h1>
-          <p style="margin:0;font-size:15px;color:#a1a1aa;line-height:1.7;">You're in the <strong style="color:#fafafa;">${tierName}</strong> tier — top ${100 - percent}% of operators.</p>
-        </td></tr>
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        <tr><td style="padding-bottom:24px;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#18181b;border:1px solid #27272a;border-radius:6px;padding:20px;">
-            <tr><td>
-              <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND};">${tier.name}</p>
-              <p style="margin:0 0 12px;font-size:14px;font-weight:600;color:#fafafa;">${tier.tagline}</p>
-              <p style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.7;">${tier.description}</p>
-            </td></tr>
-          </table>
-        </td></tr>
-
-        <tr><td style="padding-bottom:24px;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f172a;border:1px solid ${BRAND}33;border-radius:6px;padding:20px;">
-            <tr><td>
-              <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND};">Your Next Step</p>
-              <p style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.7;">${tier.nextStep}</p>
-            </td></tr>
-          </table>
-        </td></tr>
-
-        <tr><td style="padding-bottom:32px;">
-          <a href="${BASE_URL}/app/curriculum" style="display:inline-block;background:${BRAND};color:#fff;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;text-decoration:none;padding:12px 24px;border-radius:4px;">
-            Open the Curriculum →
-          </a>
-        </td></tr>
-
-        <tr><td style="padding-top:32px;border-top:1px solid #27272a;">
-          <p style="margin:0;font-size:11px;color:#71717a;line-height:1.6;">
-            Stop Prompting. Start Operating. —
-            <a href="${BASE_URL}" style="color:${BRAND};text-decoration:none;">aioperator.ceo</a>
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+function validateEmail(email: unknown): string | null {
+  if (!email || typeof email !== "string") return null;
+  const trimmed = email.trim().toLowerCase();
+  if (!EMAIL_RE.test(trimmed)) return null;
+  if (trimmed.length > 254) return null; // RFC 5321 max
+  return trimmed;
 }
 
-export async function POST(req: NextRequest) {
-  const { email, score, tier } = await req.json();
+// ─── Resend helper ────────────────────────────────────────────────────────────
 
-  if (!email || typeof email !== "string") {
-    return NextResponse.json({ error: "Invalid email" }, { status: 400 });
-  }
+interface ResendPayload {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+  scheduled_at?: string; // ISO-8601 — Resend scheduled send
+}
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "Email not configured" }, { status: 500 });
-  }
-
-  const parsedScore = Math.min(Math.max(parseInt(score, 10), 0), MAX_SCORE);
-  const resolvedTier = getTier(parsedScore);
-
+async function sendEmail(apiKey: string, payload: ResendPayload): Promise<{ ok: boolean; error?: string }> {
   const res = await fetch(RESEND_API, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    return { ok: false, error: text };
+  }
+  return { ok: true };
+}
+
+// ─── Notion helper ────────────────────────────────────────────────────────────
+
+async function logLeadToNotion(email: string, score: number, tier: string): Promise<void> {
+  const apiKey = process.env.NOTION_API_KEY;
+  if (!apiKey) {
+    console.warn("[notion] NOTION_API_KEY not set — skipping Notion log");
+    return;
+  }
+
+  const res = await fetch(NOTION_API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+      "Notion-Version": "2022-06-28",
+    },
     body: JSON.stringify({
-      from: FROM,
-      to: email,
-      subject: `Your AI Operator Score: ${parsedScore}/${MAX_SCORE} — ${resolvedTier.name}`,
-      html: buildScoreReport(email, parsedScore, tier ?? resolvedTier.name),
+      parent: { database_id: NOTION_LEADS_DB },
+      properties: {
+        Email: { title: [{ text: { content: email } }] },
+        Score: { number: score },
+        "Max Score": { number: MAX_SCORE_LOCAL },
+        Tier: { select: { name: tier } },
+      },
     }),
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    console.error("Resend error:", err);
-    return NextResponse.json({ error: "Failed to send" }, { status: 500 });
+    const text = await res.text();
+    console.error("[notion] Failed to log lead:", text);
   }
+}
+
+// ─── Route handler ────────────────────────────────────────────────────────────
+
+export async function POST(req: NextRequest) {
+  // 1. Parse body
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const { score, tier } = body as Record<string, unknown>;
+
+  // 2. Validate email
+  const email = validateEmail((body as Record<string, unknown>).email);
+  if (!email) {
+    return NextResponse.json(
+      { error: "A valid email address is required" },
+      { status: 400 }
+    );
+  }
+
+  // 3. Check API key
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("[capture-lead] RESEND_API_KEY is not set");
+    return NextResponse.json({ error: "Email service not configured" }, { status: 500 });
+  }
+
+  // 4. Sanitize score
+  const parsedScore = Math.min(Math.max(Number(score) || 0, 0), MAX_SCORE_LOCAL);
+  const resolvedTier = getTier(parsedScore);
+  const tierName = typeof tier === "string" ? tier : resolvedTier.name;
+
+  // 5. Schedule drip timestamps (Resend supports scheduled_at)
+  const now = new Date();
+  const day2 = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString();
+  const day4 = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString();
+
+  // 6. Send all three emails (score report + 2 drips)
+  const [report, drip2, drip4] = await Promise.all([
+    sendEmail(apiKey, {
+      from: FROM,
+      to: email,
+      subject: `Your AI Operator Score: ${parsedScore}/${MAX_SCORE_LOCAL} — ${resolvedTier.name}`,
+      html: buildScoreReport(email, parsedScore),
+    }),
+    sendEmail(apiKey, {
+      from: FROM,
+      to: email,
+      subject: `One thing that will move your AI score this week`,
+      html: buildDripDay2(parsedScore),
+      scheduled_at: day2,
+    }),
+    sendEmail(apiKey, {
+      from: FROM,
+      to: email,
+      subject: `Your path from ${resolvedTier.name} to the next tier`,
+      html: buildDripDay4(parsedScore),
+      scheduled_at: day4,
+    }),
+  ]);
+
+  // Log failures (non-fatal — don't block the response)
+  if (!report.ok) console.error("[resend] Score report failed:", report.error);
+  if (!drip2.ok) console.error("[resend] Drip day-2 failed:", drip2.error);
+  if (!drip4.ok) console.error("[resend] Drip day-4 failed:", drip4.error);
+
+  // Return error if the primary email (score report) failed
+  if (!report.ok) {
+    return NextResponse.json({ error: "Failed to send score report. Please try again." }, { status: 500 });
+  }
+
+  // 7. Log lead to Notion — non-blocking
+  logLeadToNotion(email, parsedScore, tierName).catch((err) =>
+    console.error("[notion] Unexpected error:", err)
+  );
 
   return NextResponse.json({ sent: true });
 }
