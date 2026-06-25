@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/site-header";
 import { cn } from "@/lib/utils";
+import { MAX_SCORE } from "@/lib/quiz";
 import { RefreshCw, Users, TrendingUp } from "lucide-react";
 
 interface Lead {
@@ -167,7 +168,7 @@ export default function AdminPage() {
                   <div key={lead.id} className="flex items-center gap-4 px-4 py-3">
                     <p className="flex-1 text-sm font-medium truncate">{lead.email}</p>
                     <span className="text-xs text-muted-foreground tabular-nums font-mono">
-                      {lead.score}/36
+                      {lead.score}/{MAX_SCORE}
                     </span>
                     <Badge className={cn("text-xs border-0 text-white", TIER_COLORS[lead.tier] ?? "bg-slate-500")}>
                       {lead.tier}
@@ -182,7 +183,7 @@ export default function AdminPage() {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Note: This store is in-memory and resets on deploy. For persistent storage, integrate Vercel KV or pipe leads to Notion/Google Sheets.
+            Leads are stored in Notion (Assessment Leads DB). This view queries that database directly.
           </p>
         </div>
       </div>

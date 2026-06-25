@@ -7,8 +7,6 @@ import { buildScoreReport, buildDripDay2, buildDripDay4 } from "@/lib/email-temp
 const RESEND_API = "https://api.resend.com/emails";
 const NOTION_API = "https://api.notion.com/v1/pages";
 const NOTION_LEADS_DB = "48a9ad6e-416d-4e58-bc69-30ce6a0b70dc"; // Assessment Leads DB
-const MAX_SCORE_LOCAL = MAX_SCORE;
-
 // FROM address: use verified domain in prod, fallback to Resend sandbox in dev
 const FROM =
   process.env.EMAIL_DOMAIN_VERIFIED === "true"
@@ -75,7 +73,7 @@ async function logLeadToNotion(email: string, score: number, tier: string): Prom
       properties: {
         Email: { title: [{ text: { content: email } }] },
         Score: { number: score },
-        "Max Score": { number: MAX_SCORE_LOCAL },
+        "Max Score": { number: MAX_SCORE },
         Tier: { select: { name: tier } },
       },
     }),
@@ -117,7 +115,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Sanitize score
-  const parsedScore = Math.min(Math.max(Number(score) || 0, 0), MAX_SCORE_LOCAL);
+  const parsedScore = Math.min(Math.max(Number(score) || 0, 0), MAX_SCORE);
   const resolvedTier = getTier(parsedScore);
   const tierName = typeof tier === "string" ? tier : resolvedTier.name;
 
@@ -131,7 +129,7 @@ export async function POST(req: NextRequest) {
     sendEmail(apiKey, {
       from: FROM,
       to: email,
-      subject: `Your AI Operator Score: ${parsedScore}/${MAX_SCORE_LOCAL} — ${resolvedTier.name}`,
+      subject: `Your AI Operator Score: ${parsedScore}/${MAX_SCORE} — ${resolvedTier.name}`,
       html: buildScoreReport(email, parsedScore),
     }),
     sendEmail(apiKey, {

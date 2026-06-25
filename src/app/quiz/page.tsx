@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { SiteHeader } from "@/components/site-header";
 import { QUESTIONS } from "@/lib/quiz";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -15,7 +16,8 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState<number[]>([]);
 
   const question = QUESTIONS[current];
-  const progress = ((current) / QUESTIONS.length) * 100;
+  // Progress reflects answered questions: full on last question after answering
+  const progress = ((current + (selected !== null ? 1 : 0)) / QUESTIONS.length) * 100;
   const isLast = current === QUESTIONS.length - 1;
 
   function handleSelect(points: number) {
@@ -50,19 +52,17 @@ export default function QuizPage() {
 
   return (
     <main className="min-h-screen flex flex-col">
-      {/* Header */}
-      <div className="border-b border-border/40 px-6 py-4 flex items-center justify-between">
-        <span className="text-xs font-bold uppercase tracking-widest text-primary">
-          ● AI Operator Platform
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {current + 1} / {QUESTIONS.length}
-        </span>
-      </div>
+      <SiteHeader />
 
       {/* Progress */}
       <div className="px-6 pt-4">
-        <Progress value={progress} className="h-1" />
+        <div className="max-w-2xl mx-auto space-y-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Question {current + 1} of {QUESTIONS.length}</span>
+            <span>{Math.round(progress)}% complete</span>
+          </div>
+          <Progress value={progress} className="h-1" />
+        </div>
       </div>
 
       {/* Question */}
@@ -77,11 +77,11 @@ export default function QuizPage() {
             </h2>
           </div>
 
-          {/* Answer choices */}
+          {/* Answer choices — use index as key to avoid duplicate-key issues */}
           <div className="space-y-3">
-            {question.answers.map((answer) => (
+            {question.answers.map((answer, idx) => (
               <button
-                key={answer.points}
+                key={idx}
                 onClick={() => handleSelect(answer.points)}
                 className={cn(
                   "w-full text-left rounded-lg border px-5 py-4 text-sm font-medium transition-all duration-150",

@@ -2,16 +2,89 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { getTier, getScorePercent, MAX_SCORE } from "@/lib/quiz";
-import { ArrowRight, CheckCircle, RefreshCw } from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
+import { getTier, getScorePercent, MAX_SCORE, TIERS } from "@/lib/quiz";
+import { ArrowRight, CheckCircle, RefreshCw, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function ScoreRing({ score, max, percent }: { score: number; max: number; percent: number }) {
+  const size = 160;
+  const strokeWidth = 10;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const filled = circumference * (percent / 100);
+  const gap = circumference - filled;
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg width={size} height={size} className="-rotate-90">
+        {/* Track */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          className="text-border/40"
+        />
+        {/* Fill */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={`${filled} ${gap}`}
+          className="text-primary transition-all duration-700"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-4xl font-bold tabular-nums">{score}</span>
+        <span className="text-sm text-muted-foreground font-medium">/ {max}</span>
+      </div>
+    </div>
+  );
+}
+
+function TierLadder({ currentTierName }: { currentTierName: string }) {
+  return (
+    <div className="space-y-2">
+      {[...TIERS].reverse().map((tier) => {
+        const isActive = tier.name === currentTierName;
+        return (
+          <div
+            key={tier.name}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-4 py-3 border transition-all",
+              isActive
+                ? "border-primary/40 bg-primary/5"
+                : "border-border/40 bg-card opacity-50"
+            )}
+          >
+            <span className={cn("w-2 h-2 rounded-full flex-shrink-0", tier.accent)} />
+            <div className="flex-1 min-w-0">
+              <p className={cn("text-xs font-semibold", isActive ? "text-foreground" : "text-muted-foreground")}>
+                {tier.name}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">{tier.tagline}</p>
+            </div>
+            {isActive && (
+              <span className="text-xs font-bold text-primary uppercase tracking-wider flex-shrink-0">You</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function ResultsClient() {
   const params = useSearchParams();
@@ -35,6 +108,10 @@ export function ResultsClient() {
       });
       if (!res.ok) throw new Error();
       setStatus("done");
+      // Redirect to dashboard after a short delay
+      setTimeout(() => {
+        router.push(`/dashboard?score=${score}&tier=${encodeURIComponent(tier.name)}&email=${encodeURIComponent(email)}`);
+      }, 1500);
     } catch {
       setStatus("error");
     }
@@ -42,12 +119,7 @@ export function ResultsClient() {
 
   return (
     <main className="min-h-screen flex flex-col">
-      {/* Nav */}
-      <nav className="border-b border-border/40 px-6 py-4">
-        <span className="text-xs font-bold uppercase tracking-widest text-primary">
-          ● AI Operator Platform
-        </span>
-      </nav>
+      <SiteHeader />
 
       <div className="flex-1 flex flex-col items-center px-6 py-12">
         <div className="w-full max-w-2xl space-y-8">
@@ -57,19 +129,15 @@ export function ResultsClient() {
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Your Assessment Score
             </p>
-            <div className="flex items-end justify-center gap-2">
-              <span className="text-7xl font-bold tabular-nums">{score}</span>
-              <span className="text-2xl text-muted-foreground mb-3 font-medium">/ {MAX_SCORE}</span>
+            <div className="flex justify-center">
+              <ScoreRing score={score} max={MAX_SCORE} percent={percent} />
             </div>
             <Badge className={cn("text-xs uppercase tracking-wider px-3 py-1", tier.accent, "text-white border-0")}>
               {tier.name}
             </Badge>
-          </div>
-
-          {/* Progress bar */}
-          <div className="space-y-2">
-            <Progress value={percent} className="h-2" />
-            <p className="text-xs text-muted-foreground text-center">{percent}th percentile of AI operators</p>
+            <p className="text-sm text-muted-foreground">
+              {percent}% of max score · {score} out of {MAX_SCORE} points
+            </p>
           </div>
 
           <Separator />
@@ -86,13 +154,23 @@ export function ResultsClient() {
 
           <Separator />
 
+          {/* Tier ladder */}
+          <div className="space-y-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              Where you sit
+            </p>
+            <TierLadder currentTierName={tier.name} />
+          </div>
+
+          <Separator />
+
           {/* Email capture */}
           <div className="space-y-4">
             {status === "done" ? (
               <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-card p-5">
                 <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-sm">Report sent.</p>
+                  <p className="font-semibold text-sm">Report sent. Taking you to your dashboard…</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Check your inbox for your full operator report and personalized curriculum path.
                   </p>
@@ -103,7 +181,7 @@ export function ResultsClient() {
                 <div>
                   <p className="font-semibold">Get your full operator report</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    We'll send a breakdown of your score, your tier, and the exact curriculum path to your next level.
+                    We&apos;ll send a breakdown of your score, your tier, and the exact curriculum path to your next level.
                   </p>
                 </div>
                 <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
@@ -134,8 +212,28 @@ export function ResultsClient() {
 
           <Separator />
 
-          {/* CTA to curriculum */}
+          {/* CTAs */}
           <div className="space-y-4 pb-8">
+            {/* Paywalled action plan teaser */}
+            <div className="rounded-lg border border-border/60 bg-card p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-muted-foreground" />
+                <p className="font-semibold text-sm">Personalized Action Plan</p>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                A custom 30-day roadmap built for your exact score and tier — specific tasks, tools, and milestones to reach your next level.
+              </p>
+              <Button
+                variant="outline"
+                className="gap-2 font-bold uppercase tracking-wider text-xs"
+                onClick={() => router.push(`/action-plan?score=${score}`)}
+              >
+                Unlock Your Plan
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+
+            {/* Curriculum CTA */}
             <div className="rounded-lg border border-primary/30 bg-primary/5 p-5 space-y-3">
               <p className="font-semibold text-sm">Ready to level up?</p>
               <p className="text-xs text-muted-foreground leading-relaxed">

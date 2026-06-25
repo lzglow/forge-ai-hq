@@ -1,6 +1,6 @@
 # forge-ai-hq — Agent Instructions
 
-Top-of-funnel lead generation tool for [aioperator.ceo](https://aioperator.ceo). Users take an 8-question AI readiness assessment, receive a scored tier result, and can submit their email to get a personalized score report. The tool feeds leads into the AI Operator Platform curriculum.
+Top-of-funnel lead generation tool for [aioperator.ceo](https://aioperator.ceo). Users take a 12-question AI readiness assessment, receive a scored tier result, and can submit their email to get a personalized score report. The tool feeds leads into the AI Operator Platform curriculum.
 
 Live at: **https://assess.aioperator.ceo**
 
@@ -26,15 +26,26 @@ Live at: **https://assess.aioperator.ceo**
 ## Services & Integrations
 
 ### Resend
-- API key in `.env.local` as `RESEND_API_KEY`
-- Also set in Vercel env vars (production + preview)
-- `FROM` address: `support@aioperator.ceo` — requires `aioperator.ceo` to be verified as a domain in the Resend dashboard
-- Until the domain is verified, use `onboarding@resend.dev` as a fallback
-- Email logic lives in `src/app/api/capture-lead/route.ts`
+- API key in `.env.local` as `RESEND_API_KEY` (also set in Vercel env vars)
+- `FROM` address: controlled by `EMAIL_DOMAIN_VERIFIED` env var:
+  - `true` → `support@aioperator.ceo` (verified domain in Resend dashboard)
+  - unset/false → `onboarding@resend.dev` (Resend sandbox fallback)
+- Three emails sent on lead capture: score report (immediate), Day 2 drip, Day 4 drip
+- Email templates live in `src/lib/email-templates.ts`
+
+### Notion (Leads DB)
+- DB ID: `48a9ad6e-416d-4e58-bc69-30ce6a0b70dc` (Assessment Leads)
+- API key in `.env.local` as `NOTION_API_KEY` (also set in Vercel env vars)
+- `capture-lead/route.ts` logs every lead to Notion non-blocking
+- `api/leads/route.ts` queries Notion to serve the admin dashboard
+
+### Admin Dashboard
+- Protected by `ADMIN_TOKEN` env var (check `x-admin-token` header)
+- UI at `/admin` — reads from Notion via `GET /api/leads`
 
 ### Paddle
-- Used to collect payment for any future paid features or upgrade flows
-- Not yet integrated in this codebase — add when building a paywall
+- Not yet wired — do not add Paddle client-side scripts until a paywall feature is scoped
+- `/action-plan` page currently has a placeholder; replace with trial CTA → `https://aioperator.ceo/auth`
 
 ### Vercel
 - Project: `forge-ai-hq` (team: lzglow)
@@ -67,13 +78,23 @@ src/
     results/
       page.tsx            # Server wrapper with Suspense
       results-client.tsx  # Score display, email capture form (client)
+    dashboard/
+      page.tsx            # Post-quiz dashboard (tier, tracks, milestones, action plan CTA)
+    action-plan/
+      page.tsx            # Placeholder — replace Paddle checkout with trial CTA
+    admin/
+      page.tsx            # Token-protected leads dashboard (reads from Notion)
     api/
       capture-lead/
-        route.ts          # POST — sends score report email via Resend
+        route.ts          # POST — sends score report + Day 2/4 drip emails; logs to Notion
+      leads/
+        route.ts          # GET — token-protected; queries Notion Assessment Leads DB
   components/
+    site-header.tsx       # Nav component
     ui/                   # shadcn/ui components (do not hand-edit)
   lib/
     quiz.ts               # Questions, tiers, scoring logic — source of truth
+    email-templates.ts    # buildScoreReport, buildDripDay2, buildDripDay4
     utils.ts              # cn() helper
 ```
 
@@ -84,9 +105,14 @@ src/
 | Route | Description |
 |---|---|
 | `GET /` | Landing page |
-| `GET /quiz` | 8-question assessment (client-rendered) |
+| `GET /quiz` | 12-question assessment (client-rendered) |
 | `GET /results?score=N` | Score results + email capture |
-| `POST /api/capture-lead` | Sends score report email; accepts `{ email, score, tier }` |
+| `GET /dashboard` | Post-quiz dashboard |
+| `GET /action-plan` | Placeholder — pending trial CTA replacement |
+| `GET /admin` | Token-protected leads dashboard |
+| `POST /api/capture-lead` | Sends score report + drip emails; accepts `{ email, score, tier }` |
+| `GET /api/leads` | Returns all leads from Notion (requires `x-admin-token` header) |
+| `POST /api/paddle-webhook` | Paddle event handler (stub — inert until `PADDLE_WEBHOOK_SECRET` is set) |
 
 Score is passed as a URL param (`/results?score=18`) — no localStorage, no context.
 
@@ -96,8 +122,8 @@ Score is passed as a URL param (`/results?score=18`) — no localStorage, no con
 
 Defined in `src/lib/quiz.ts`. Do not change without updating all four tiers.
 
-- 8 questions × 3 points max = **24 point maximum**
-- 4 tiers: AI Explorer (0–6), AI Practitioner (7–12), AI Operator (13–18), AI Commander (19–24)
+- 12 questions × 3 points max = **36 point maximum**
+- 4 tiers: AI Explorer (0–9), AI Practitioner (10–18), AI Operator (19–27), AI Commander (28–36)
 - Each tier has: `name`, `tagline`, `description`, `nextStep`, `accent` (Tailwind bg class)
 
 ---
@@ -107,6 +133,9 @@ Defined in `src/lib/quiz.ts`. Do not change without updating all four tiers.
 | Variable | Where | Purpose |
 |---|---|---|
 | `RESEND_API_KEY` | `.env.local` + Vercel | Resend email API authentication |
+| `EMAIL_DOMAIN_VERIFIED` | `.env.local` + Vercel | `"true"` → send from `support@aioperator.ceo` |
+| `NOTION_API_KEY` | `.env.local` + Vercel | Notion integration — logs leads to Assessment Leads DB |
+| `ADMIN_TOKEN` | `.env.local` + Vercel | Protects `GET /api/leads` and `/admin` page |
 
 Never commit `.env.local`. It is gitignored via `.env*`.
 

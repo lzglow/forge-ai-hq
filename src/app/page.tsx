@@ -1,18 +1,14 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SiteHeader } from "@/components/site-header";
 import { TIERS, QUESTIONS, MAX_SCORE } from "@/lib/quiz";
 import { ArrowRight, Clock, BarChart3, Zap } from "lucide-react";
 
 export default function Home() {
   return (
     <main className="flex flex-col min-h-screen">
-      {/* Nav */}
-      <nav className="border-b border-border/40 px-6 py-4">
-        <span className="text-xs font-bold uppercase tracking-widest text-primary">
-          ● AI Operator Platform
-        </span>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center">
@@ -22,13 +18,14 @@ export default function Home() {
           </Badge>
 
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight mb-6">
-            Are you operating AI —{" "}
-            <span className="text-primary">or just using it?</span>
+            Most people use AI.{" "}
+            <span className="text-primary">Few people operate it.</span>
           </h1>
 
           <p className="text-lg text-muted-foreground leading-relaxed mb-10 max-w-xl mx-auto">
-            Most people prompt. Operators build systems. Take 8 questions and find
-            out exactly where you stand — and what to do next.
+            There&apos;s a real difference between reaching for a tool and building a system.
+            {" "}{QUESTIONS.length} questions will show you which side of that line you&apos;re on
+            — and exactly what to do next.
           </p>
 
           <div className="flex items-center justify-center mb-12">
@@ -52,7 +49,7 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-1.5">
               <Zap className="h-3.5 w-3.5" />
-              <span>~2 minutes</span>
+              <span>~3 minutes</span>
             </div>
           </div>
         </div>
@@ -62,7 +59,7 @@ export default function Home() {
       <section className="border-t border-border/40 px-6 py-16">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground text-center mb-8">
-            Your result will place you in one of four tiers
+            Four tiers. One honest score.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {TIERS.map((tier) => (
@@ -90,7 +87,7 @@ export default function Home() {
           >
             AI Operator Platform
           </a>{" "}
-          — Stop Prompting. Start Operating.
+          — Built for operators, not just users.
         </p>
       </footer>
     </main>

@@ -69,7 +69,6 @@ function DashboardContent() {
   const email = params.get("email") ?? "";
   const tier = getTier(score);
   const activeTierName = TIERS.find((t) => t.name === tierName)?.name ?? tier.name;
-  const activeTier = getTier(score);
   const percent = getScorePercent(score);
   const tracks = TRACK_MAP[activeTierName] ?? TRACK_MAP["AI Explorer"];
   const milestones = MILESTONES[activeTierName] ?? MILESTONES["AI Explorer"];
@@ -87,10 +86,10 @@ function DashboardContent() {
               Your Operator Dashboard
             </p>
             <h1 className="text-2xl font-bold tracking-tight">
-              {email ? `Welcome, ${email.split("@")[0]}.` : "Welcome."} Here's your plan.
+              {email ? `Welcome, ${email.split("@")[0]}.` : "Welcome."} Here&apos;s your plan.
             </h1>
             <div className="flex items-center gap-3 pt-1">
-              <Badge className={cn("text-xs uppercase tracking-wider px-3 py-1", activeTier.accent, "text-white border-0")}>
+              <Badge className={cn("text-xs uppercase tracking-wider px-3 py-1", tier.accent, "text-white border-0")}>
                 {activeTierName}
               </Badge>
               <span className="text-sm text-muted-foreground">
@@ -104,8 +103,8 @@ function DashboardContent() {
           {/* Tier summary */}
           <div className="rounded-lg border border-border/60 bg-card p-5 space-y-2">
             <p className="text-xs font-bold uppercase tracking-wider text-primary">Where you are</p>
-            <p className="font-semibold">{activeTier.tagline}</p>
-            <p className="text-sm text-muted-foreground leading-relaxed">{activeTier.description}</p>
+            <p className="font-semibold">{tier.tagline}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{tier.description}</p>
           </div>
 
           {/* Recommended tracks */}
@@ -177,7 +176,7 @@ function DashboardContent() {
             </p>
             <Button
               className="gap-2 font-bold uppercase tracking-wider text-xs"
-              onClick={() => router.push("/action-plan")}
+              onClick={() => router.push(`/action-plan?score=${score}`)}
             >
               Get My Action Plan
               <ArrowRight className="h-3.5 w-3.5" />

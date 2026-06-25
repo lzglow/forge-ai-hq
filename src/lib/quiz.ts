@@ -56,7 +56,7 @@ export const QUESTIONS: Question[] = [
     answers: [
       { label: "No — I redo most of what AI gives me", points: 0 },
       { label: "Sometimes, for very simple tasks", points: 1 },
-      { label: "Yes, for most tasks with light review", points: 2 },
+      { label: "Yes, for most tasks with a light review", points: 2 },
       { label: "Yes — I have quality criteria and evaluation built in", points: 3 },
     ],
   },
@@ -100,49 +100,93 @@ export const QUESTIONS: Question[] = [
       { label: "Yes — I have actual numbers and review them", points: 3 },
     ],
   },
+  {
+    id: 9,
+    question: "How do you stay current with new AI tools and capabilities?",
+    answers: [
+      { label: "I hear about things when they go viral", points: 0 },
+      { label: "I follow a few newsletters or creators", points: 1 },
+      { label: "I have a regular learning practice", points: 2 },
+      { label: "I have a system for evaluating and integrating new tools into my stack", points: 3 },
+    ],
+  },
+  {
+    id: 10,
+    question: "Have you helped anyone else on your team or in your network adopt AI?",
+    answers: [
+      { label: "No — I'm the only one using it", points: 0 },
+      { label: "I've shared a few things informally", points: 1 },
+      { label: "I've trained or helped someone implement it", points: 2 },
+      { label: "I've built AI into team workflows that others depend on", points: 3 },
+    ],
+  },
+  {
+    id: 11,
+    question: "Do you have a defined AI tool stack for your work?",
+    answers: [
+      { label: "I use whatever seems relevant at the time", points: 0 },
+      { label: "I have 1–2 tools I rely on regularly", points: 1 },
+      { label: "I have a defined stack for different task types", points: 2 },
+      { label: "Curated stack with clear roles for each tool and regular evaluation", points: 3 },
+    ],
+  },
+  {
+    id: 12,
+    question: "Can you point to specific revenue or time you've recovered because of AI?",
+    answers: [
+      { label: "Not really — I couldn't put a number on it", points: 0 },
+      { label: "I've saved time but haven't quantified it", points: 1 },
+      { label: "I have rough estimates of the value", points: 2 },
+      { label: "Yes — clear numbers, and they're significant", points: 3 },
+    ],
+  },
 ];
 
-export const MAX_SCORE = QUESTIONS.length * 3; // 24
+export const MAX_SCORE = QUESTIONS.length * 3; // 36
 
 export const TIERS: Tier[] = [
   {
     name: "AI Explorer",
     min: 0,
-    max: 6,
-    tagline: "You're aware of AI — but mostly running on instinct.",
+    max: 9,
+    tagline: "The tools are there. The operating layer isn't.",
     description:
-      "You're using AI reactively, without a system behind it. The good news: you're closer than you think. What you're missing isn't skill — it's an operating layer. The curriculum was built specifically for where you are right now.",
-    nextStep: "Start with Track 1 — The AI Operating System. It's the foundation everything else plugs into.",
+      "You're using AI when it's convenient, but there's no structure underneath — no context system, no reusable prompts, no automation running on its own. That's not a criticism; it's just where most people start. The move from here isn't learning more tools. It's building the operating layer: a context doc, a prompt library, one automated workflow. That's what shifts AI from something you use occasionally to something that actually works for you.",
+    nextStep:
+      "Start with Track 1 — The AI Operating System. It covers context, prompt systems, and your first automated workflow. That's the foundation. Everything else in the curriculum builds on it.",
     accent: "bg-slate-500",
   },
   {
     name: "AI Practitioner",
-    min: 7,
-    max: 12,
-    tagline: "You're using AI regularly — but the infrastructure isn't there yet.",
+    min: 10,
+    max: 18,
+    tagline: "Your habits are good. Your systems are fragile.",
     description:
-      "You've got real habits and some workflows, but they're fragile — they break when you're busy or when context changes. The gap between practitioner and operator is building the layer that runs even when you're not paying attention.",
-    nextStep: "Focus on Tracks 2 and 3 — Agents & Autonomy and Context & Knowledge. That's where the leverage lives.",
+      "You use AI consistently and you have things that work. The problem is they're fragile — they depend on you remembering to prompt, staying on top of context, and managing the output yourself. The gap between Practitioner and Operator isn't effort. It's infrastructure. One automated workflow that runs without you is worth more than a dozen manual habits you have to maintain.",
+    nextStep:
+      "Tracks 2 and 3 — Agents & Autonomy and Context & Knowledge. Track 2 is where you build your first workflow that runs without you. Track 3 is where you build the context system that makes everything else more reliable. Do them in order.",
     accent: "bg-blue-500",
   },
   {
     name: "AI Operator",
-    min: 13,
-    max: 18,
-    tagline: "You're building real workflows. Now it's about scale and governance.",
+    min: 19,
+    max: 27,
+    tagline: "Your systems work. Now it's about making them work for a team.",
     description:
-      "You're already operating at a level most people haven't reached. Your systems work, your context is structured, and you have real automation running. The next layer is governance, team-level deployment, and organizational AI design.",
-    nextStep: "Go straight to Tracks 4 and 5 — Business & Org Design and Dev Tools. You're ready for the advanced material.",
+      "You've built real things — automated workflows, a context system, documented processes. These are running, and they're saving you real time. Most people never get here. The next layer isn't more automation. It's making your systems robust enough to survive you being away, and clear enough that someone else could run them.",
+    nextStep:
+      "Tracks 4 and 5 — Business & Org Design and Dev Tools. Track 4 covers governance and team-level deployment. Track 5 covers the technical layer for operators who want to build their own tools. Start with whichever fits your most immediate gap.",
     accent: "bg-violet-500",
   },
   {
     name: "AI Commander",
-    min: 19,
-    max: 24,
-    tagline: "You're operating at the top. Now you build the systems others operate inside.",
+    min: 28,
+    max: 36,
+    tagline: "You're not just running AI — you're building the systems others run it inside.",
     description:
-      "You have a full operating system — automated workflows, documented processes, measurable outcomes, and fallback systems. The curriculum's Enterprise track will sharpen your governance model and help you scale AI across teams and clients.",
-    nextStep: "Start with Track 5 and work backwards. At your level, the gaps are usually in org design and governance, not tooling.",
+      "You have the full stack: automated workflows, documented processes, measurable outcomes, and fallback systems. You know what you've built and how to evaluate it. The work at this level is institutional — governance, org-wide deployment, and teaching others to operate the way you do. The Enterprise track is where this goes.",
+    nextStep:
+      "The Enterprise track. You've already built the individual operating system. This track is about scaling it — policies, team rollout, org-wide governance, and building the infrastructure others work inside. Start there and fill in any gaps from earlier tracks as needed.",
     accent: "bg-emerald-500",
   },
 ];
