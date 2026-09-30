@@ -169,13 +169,13 @@ export function buildScoreReport(email: string, score: number): string {
       <a href="${cta.url}" style="display:inline-block;background:${BRAND};color:#fff;font-size:13px;font-weight:700;letter-spacing:0.06em;text-decoration:none;padding:14px 28px;border-radius:6px;">${cta.label}</a>
     </td></tr>
 
-    <!-- Action plan upsell -->
+    <!-- Free trial secondary CTA -->
     <tr><td style="padding-bottom:32px;">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${CARD};border:1px solid ${BORDER};border-radius:8px;">
         <tr><td style="padding:20px 24px;">
-          <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:${TEXT};">Want a custom 30-day roadmap?</p>
-          <p style="margin:0 0 14px;font-size:12px;color:${MUTED};line-height:1.7;">Your Personalized Action Plan gives you specific tasks, tools, and weekly milestones built for your exact score — not generic advice.</p>
-          <a href="${BASE_URL}/action-plan?score=${score}" style="font-size:12px;color:${BRAND};text-decoration:none;font-weight:600;">Unlock Your Action Plan →</a>
+          <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:${TEXT};">Want more structure while you work through it?</p>
+          <p style="margin:0 0 14px;font-size:12px;color:${MUTED};line-height:1.7;">Start a free 14-day trial — full curriculum access, progress tracking, and completion certificates. No credit card required.</p>
+          <a href="${BASE_URL}/action-plan?score=${score}" style="font-size:12px;color:${BRAND};text-decoration:none;font-weight:600;">Start Your Free Trial →</a>
         </td></tr>
       </table>
     </td></tr>
