@@ -86,7 +86,7 @@ function DashboardContent() {
               Your Operator Dashboard
             </p>
             <h1 className="text-2xl font-bold tracking-tight">
-              {email ? `Welcome, ${email.split("@")[0]}.` : "Welcome."} Here&apos;s your plan.
+              {email ? `Welcome, ${email.split("@")[0]}. ` : "Welcome. "}Here&apos;s your plan.
             </h1>
             <div className="flex items-center gap-3 pt-1">
               <Badge className={cn("text-xs uppercase tracking-wider px-3 py-1", tier.accent, "text-white border-0")}>
