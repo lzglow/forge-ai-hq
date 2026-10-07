@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { SiteHeader } from "@/components/site-header";
 import { getTier, getScorePercent, MAX_SCORE, TIERS } from "@/lib/quiz";
-import { ArrowRight, Lock, CheckCircle2, Circle } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TRACK_MAP: Record<string, string[]> = {
@@ -133,7 +133,7 @@ function DashboardContent() {
               </div>
             ))}
             <a href="https://aioperator.ceo/app/curriculum" target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" className="w-full gap-2 font-bold uppercase tracking-wider text-xs mt-1">
+              <Button className="w-full gap-2 font-bold uppercase tracking-wider text-xs mt-1">
                 Open Full Curriculum
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
@@ -165,22 +165,19 @@ function DashboardContent() {
 
           <Separator />
 
-          {/* Paywall CTA — personalized action plan */}
-          <div className="rounded-lg border border-border/60 bg-card p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <Lock className="h-4 w-4 text-muted-foreground" />
-              <p className="font-semibold text-sm">Unlock Your Personalized Action Plan</p>
-            </div>
+          {/* Secondary CTA — free trial signup */}
+          <div className="space-y-2">
+            <p className="font-semibold text-sm">Want more structure while you work through it?</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              A custom 30-day roadmap built for your exact score — specific tasks, tools, and weekly milestones tailored to move you from {activeTierName} to the next tier.
+              Start a free 14-day trial — full curriculum access, progress tracking, and completion certificates. No credit card required.
             </p>
-            <Button
-              className="gap-2 font-bold uppercase tracking-wider text-xs"
+            <button
               onClick={() => router.push(`/action-plan?score=${score}`)}
+              className="text-xs text-primary font-bold uppercase tracking-wider inline-flex items-center gap-1.5 hover:underline"
             >
-              Get My Action Plan
+              Start Your Free Trial
               <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
+            </button>
           </div>
 
           <div className="pb-8 text-center">
