@@ -76,7 +76,7 @@ function ActionPlanContent() {
             <Button
               size="lg"
               className="w-full gap-2 font-bold uppercase tracking-wider text-xs"
-              onClick={() => window.open("https://aioperator.ceo/auth", "_blank")}
+              onClick={() => window.open("https://app.aioperator.ceo/signup", "_blank")}
             >
               Start Free Trial
               <ArrowRight className="h-3.5 w-3.5" />
